@@ -240,8 +240,7 @@ def call_stable_diffusion_2_1(prompt,
                                     guidance_scale, 
                                     steps
                                     ):
-    stable_diffusion_2_1_pipe.enable_attention_slicing()
-    # stable_diffusion_2_1_pipe.enable_model_cpu_offload()
+
     stable_diffusion_2_1_pipe.enable_xformers_memory_efficient_attention()
 
     stable_diffusion_2_1_pipe = StableDiffusionPipeline.from_pretrained("./models/stable-diffusion-2-1",
@@ -252,6 +251,9 @@ def call_stable_diffusion_2_1(prompt,
                                                                      safety_checker = None,
                                                                      feature_extractor = None,
                                                                      ).to(device)
+    stable_diffusion_2_1_pipe.enable_attention_slicing()
+    # stable_diffusion_2_1_pipe.enable_model_cpu_offload()
+    
 
 
     with autocast(device): 
@@ -928,3 +930,4 @@ def call_controlet_mlsd(image,
 
     imgstr = json.dumps(dictobj)
     return imgstr
+
