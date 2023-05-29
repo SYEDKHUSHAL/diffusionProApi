@@ -241,8 +241,6 @@ def call_stable_diffusion_2_1(prompt,
                                     steps
                                     ):
 
-    stable_diffusion_2_1_pipe.enable_xformers_memory_efficient_attention()
-
     stable_diffusion_2_1_pipe = StableDiffusionPipeline.from_pretrained("./models/stable-diffusion-2-1",
                                                                      revision="fp16" if torch.cuda.is_available() else "fp32",
                                                                      torch_dtype=torch.float16, 
@@ -252,6 +250,10 @@ def call_stable_diffusion_2_1(prompt,
                                                                      feature_extractor = None,
                                                                      ).to(device)
     stable_diffusion_2_1_pipe.enable_attention_slicing()
+
+    stable_diffusion_2_1_pipe.enable_xformers_memory_efficient_attention()
+
+    
     # stable_diffusion_2_1_pipe.enable_model_cpu_offload()
     
 
@@ -323,10 +325,16 @@ def call_stable_diffusion_2_1_img2img(image,
     image = result.images[0]
     image.save("./results/img2imgv2.png")
 
-    
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     imgstr = base64.b64encode(buffer.getvalue())
+    base64_string = imgstr.decode('utf-8')
+    imgstr = base64_string
+    dictobj = {}
+    dictobj.update({
+        "img0": base64_string,
+    })
+    imgstr = json.dumps(dictobj)
 
     return imgstr
 
@@ -418,14 +426,6 @@ def call_openpose_controlnet(image,
                                     width, 
                                     guidance_scale, 
                                     steps):
-    image = Image.open(BytesIO(image))
-    pose = openpose_detector_model(image)
-    pose.save('./images/generatedPose.png')
-    buffer = BytesIO()
-    pose.save(buffer, format="PNG")
-    pose_base64 = base64.b64encode(buffer.getvalue())
-    pose_string = pose_base64.decode('utf-8')
-
 
     openpose_detector_model = OpenposeDetector.from_pretrained("lllyasviel/ControlNet")
 
@@ -441,7 +441,13 @@ def call_openpose_controlnet(image,
                                                                                 torch_dtype=torch.float16, 
                                                                                 local_files_only = True
                                                                             ).to(device)
-    
+    image = Image.open(BytesIO(image))
+    pose = openpose_detector_model(image)
+    pose.save('./images/generatedPose.png')
+    buffer = BytesIO()
+    pose.save(buffer, format="PNG")
+    pose_base64 = base64.b64encode(buffer.getvalue())
+    pose_string = pose_base64.decode('utf-8')
 
     generator = torch.Generator(device="cpu").manual_seed(seed)
     openpose_controlnet_pipe.scheduler = UniPCMultistepScheduler.from_config(openpose_controlnet_pipe.scheduler.config)
@@ -930,4 +936,5 @@ def call_controlet_mlsd(image,
 
     imgstr = json.dumps(dictobj)
     return imgstr
+
 
